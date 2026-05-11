@@ -7,6 +7,7 @@ export type {
   MessagesResult,
   Room,
   RoomLastMessage,
+  SendMessageResult,
   UserProfile,
 } from "./Messenger/MessengerTypes.js";
 export type {

@@ -61,6 +61,8 @@ await api.disconnect();
     - [Get messages by name](#get-messages-by-name)
     - [Get members](#get-members)
     - [Get profile](#get-profile)
+    - [Send message](#send-message)
+    - [Send message by name](#send-message-by-name)
   - [Conference](#conference)
     - [Get conference health](#get-conference-health)
 - [Logging](#logging)
@@ -421,6 +423,32 @@ const profile = await api.messenger.getProfile(userId);
 ```
 
 Returns the Matrix profile of any user: `userId`, `displayName`, `avatarUrl`.
+
+#### Send message
+
+```ts
+const result = await api.messenger.sendMessage(roomId, "Hello!");
+console.log(result.eventId);
+```
+
+Sends a text message to a room by its Matrix room ID. Returns the `eventId` of the sent message.
+
+An optional `txnId` can be passed as a third argument for idempotency — if the same `txnId` is used twice, the server will deduplicate the send:
+
+```ts
+await api.messenger.sendMessage(roomId, "Hello!", "my-unique-id");
+```
+
+#### Send message by name
+
+```ts
+const result = await api.messenger.sendMessageByName("Max Mustermann", "Hello!");
+console.log(result.eventId);
+```
+
+Looks up the room by display name and sends a text message. Throws if no room or multiple rooms match the name. Accepts an optional `txnId` as a third argument, same as `sendMessage()`.
+
+> **Note:** This method calls `getRooms()` internally, which makes an extra network request. If you already have the room ID, prefer `sendMessage()` directly.
 
 ---
 

@@ -14,6 +14,7 @@ import type {
   Member,
   Message,
   MessagesResult,
+  SendMessageResult,
   Room,
   UserProfile,
 } from "./MessengerTypes.js";
@@ -136,6 +137,34 @@ export class MessengerService {
 
     log.debug(`Got ${messages.length} messages for ${roomId}`);
     return { messages, start: data.start, end: data.end };
+  }
+
+  async sendMessage(roomId: string, body: string, txnId = Date.now().toString()): Promise<SendMessageResult> {
+    const encodedRoomId = encodeURIComponent(roomId);
+
+    const res = await this.session.http.put(
+      `${this.session.matrixBaseUrl()}/rooms/${encodedRoomId}/send/m.room.message/${txnId}`,
+      JSON.stringify({ msgtype: "m.text", body }),
+    { headers: { ...this.authHeader(), "Content-Type": "application/json" } },
+    );
+
+    const data = parseJson<{ event_id: string }>(res.data, "sendMessage");
+
+    log.debug(`Sent message to ${roomId}, event_id: ${data.event_id}`);
+    return { eventId: data.event_id };
+  }
+
+  async sendMessageByName(name: string, body: string, txnId = Date.now().toString()): Promise<SendMessageResult> {
+    const rooms = await this.getRooms();
+    const matches = rooms.filter((r) => r.name.toLowerCase() === name.toLowerCase());
+
+    if (matches.length === 0) throw new Error(`No room found with name "${name}"`);
+    if (matches.length > 1)
+      throw new Error(`Multiple rooms found with name "${name}" — use sendMessage() with a room ID`);
+
+    const roomId = matches[0]?.id;
+    if (!roomId) throw new Error(`No room found with name "${name}"`);
+    return this.sendMessage(roomId, body, txnId);
   }
 
   async getMembers(roomId: string): Promise<Member[]> {

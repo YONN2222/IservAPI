@@ -29,6 +29,10 @@ export interface MessagesResult {
   end: string | undefined;
 }
 
+export interface SendMessageResult {
+  eventId: string;
+}
+
 export interface Member {
   userId: string;
   displayName: string | null;

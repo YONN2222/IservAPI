@@ -335,3 +335,134 @@ describe("MessengerService.getProfile()", () => {
     expect(profile.avatarUrl).toBeNull();
   });
 });
+
+describe("MessengerService.sendMessage()", () => {
+  const ROOM_ID = "!testroom:server";
+  const ENCODED_ROOM = encodeURIComponent(ROOM_ID);
+
+  test("posts to the correct Matrix endpoint and returns the event ID", async () => {
+    const { session, expectAllRoutesCalled } = buildMockSession([
+      {
+        method: "post",
+        url: `${MATRIX_BASE}/rooms/${ENCODED_ROOM}/send/m.room.message/test-txn`,
+        headers: { Authorization: `Bearer ${MATRIX_TOKEN}`, "Content-Type": "application/json" },
+        response: { data: JSON.stringify({ event_id: "$abc123:server" }) },
+      },
+    ]);
+
+    const result = await new MessengerService(session).sendMessage(ROOM_ID, "Hello!", "test-txn");
+
+    expect(result.eventId).toBe("$abc123:server");
+    expectAllRoutesCalled();
+  });
+});
+
+describe("MessengerService.sendMessageByName()", () => {
+  const ROOM_ID = "!testroom:server";
+  const ENCODED_ROOM = encodeURIComponent(ROOM_ID);
+  const SYNC_FILTER = JSON.stringify({ room: { timeline: { limit: 1 } } });
+
+  const SYNC_RESPONSE = JSON.stringify({
+    next_batch: "s1",
+    rooms: {
+      join: {
+        [ROOM_ID]: {
+          timeline: { events: [] },
+          state: { events: [{ type: "m.room.name", content: { name: "Test Room" } }] },
+          unread_notifications: { notification_count: 0 },
+        },
+      },
+    },
+    account_data: { events: [] },
+  });
+
+  test("posts to the correct Matrix endpoint and returns the event ID", async () => {
+    const { session, expectAllRoutesCalled } = buildMockSession([
+      {
+        method: "post",
+        url: `${MATRIX_BASE}/rooms/${ENCODED_ROOM}/send/m.room.message/test-txn`,
+        headers: { Authorization: `Bearer ${MATRIX_TOKEN}`, "Content-Type": "application/json" },
+        response: { data: JSON.stringify({ event_id: "$abc123:server" }) },
+      },
+    ]);
+
+    const result = await new MessengerService(session).sendMessage(ROOM_ID, "Hello!", "test-txn");
+
+    expect(result.eventId).toBe("$abc123:server");
+    expectAllRoutesCalled();
+  });
+
+  test("looks up the room by name and sends the message", async () => {
+    const { session, expectAllRoutesCalled } = buildMockSession([
+      {
+        method: "get",
+        url: `${MATRIX_BASE}/sync`,
+        params: { filter: SYNC_FILTER, timeout: 0 },
+        headers: { Authorization: `Bearer ${MATRIX_TOKEN}` },
+        response: { data: SYNC_RESPONSE },
+      },
+      {
+        method: "post",
+        url: `${MATRIX_BASE}/rooms/${ENCODED_ROOM}/send/m.room.message/test-txn`,
+        headers: { Authorization: `Bearer ${MATRIX_TOKEN}`, "Content-Type": "application/json" },
+        response: { data: JSON.stringify({ event_id: "$abc123:server" }) },
+      },
+    ]);
+
+    const result = await new MessengerService(session).sendMessageByName("Test Room", "Hello!", "test-txn");
+
+    expect(result.eventId).toBe("$abc123:server");
+    expectAllRoutesCalled();
+  });
+
+  test("throws when no room matches the name", async () => {
+    const { session } = buildMockSession([
+      {
+        method: "get",
+        url: `${MATRIX_BASE}/sync`,
+        params: { filter: SYNC_FILTER, timeout: 0 },
+        headers: { Authorization: `Bearer ${MATRIX_TOKEN}` },
+        response: { data: SYNC_RESPONSE },
+      },
+    ]);
+
+    await expect(
+      new MessengerService(session).sendMessageByName("Nobody", "Hi"),
+    ).rejects.toThrow(`No room found with name "Nobody"`);
+  });
+
+  test("throws when multiple rooms match the name", async () => {
+    const DUPLICATE_SYNC = JSON.stringify({
+      next_batch: "s1",
+      rooms: {
+        join: {
+          "!room1:server": {
+            timeline: { events: [] },
+            state: { events: [{ type: "m.room.name", content: { name: "Same Name" } }] },
+            unread_notifications: {},
+          },
+          "!room2:server": {
+            timeline: { events: [] },
+            state: { events: [{ type: "m.room.name", content: { name: "Same Name" } }] },
+            unread_notifications: {},
+          },
+        },
+      },
+      account_data: { events: [] },
+    });
+
+    const { session } = buildMockSession([
+      {
+        method: "get",
+        url: `${MATRIX_BASE}/sync`,
+        params: { filter: SYNC_FILTER, timeout: 0 },
+        headers: { Authorization: `Bearer ${MATRIX_TOKEN}` },
+        response: { data: DUPLICATE_SYNC },
+      },
+    ]);
+
+    await expect(
+      new MessengerService(session).sendMessageByName("Same Name", "Hi"),
+    ).rejects.toThrow(`Multiple rooms found with name "Same Name"`);
+  });
+});
