@@ -343,7 +343,7 @@ describe("MessengerService.sendMessage()", () => {
   test("posts to the correct Matrix endpoint and returns the event ID", async () => {
     const { session, expectAllRoutesCalled } = buildMockSession([
       {
-        method: "post",
+        method: "put",
         url: `${MATRIX_BASE}/rooms/${ENCODED_ROOM}/send/m.room.message/test-txn`,
         headers: { Authorization: `Bearer ${MATRIX_TOKEN}`, "Content-Type": "application/json" },
         response: { data: JSON.stringify({ event_id: "$abc123:server" }) },
@@ -376,22 +376,6 @@ describe("MessengerService.sendMessageByName()", () => {
     account_data: { events: [] },
   });
 
-  test("posts to the correct Matrix endpoint and returns the event ID", async () => {
-    const { session, expectAllRoutesCalled } = buildMockSession([
-      {
-        method: "post",
-        url: `${MATRIX_BASE}/rooms/${ENCODED_ROOM}/send/m.room.message/test-txn`,
-        headers: { Authorization: `Bearer ${MATRIX_TOKEN}`, "Content-Type": "application/json" },
-        response: { data: JSON.stringify({ event_id: "$abc123:server" }) },
-      },
-    ]);
-
-    const result = await new MessengerService(session).sendMessage(ROOM_ID, "Hello!", "test-txn");
-
-    expect(result.eventId).toBe("$abc123:server");
-    expectAllRoutesCalled();
-  });
-
   test("looks up the room by name and sends the message", async () => {
     const { session, expectAllRoutesCalled } = buildMockSession([
       {
@@ -402,7 +386,7 @@ describe("MessengerService.sendMessageByName()", () => {
         response: { data: SYNC_RESPONSE },
       },
       {
-        method: "post",
+        method: "put",
         url: `${MATRIX_BASE}/rooms/${ENCODED_ROOM}/send/m.room.message/test-txn`,
         headers: { Authorization: `Bearer ${MATRIX_TOKEN}`, "Content-Type": "application/json" },
         response: { data: JSON.stringify({ event_id: "$abc123:server" }) },

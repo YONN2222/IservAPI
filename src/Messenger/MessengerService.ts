@@ -139,7 +139,7 @@ export class MessengerService {
     return { messages, start: data.start, end: data.end };
   }
 
-  async sendMessage(roomId: string, body: string, txnId = Date.now().toString()): Promise<SendMessageResult> {
+  async sendMessage(roomId: string, body: string, txnId: string = crypto.randomUUID()): Promise<SendMessageResult> {
     const encodedRoomId = encodeURIComponent(roomId);
 
     const res = await this.session.http.put(
@@ -154,7 +154,7 @@ export class MessengerService {
     return { eventId: data.event_id };
   }
 
-  async sendMessageByName(name: string, body: string, txnId = Date.now().toString()): Promise<SendMessageResult> {
+  async sendMessageByName(name: string, body: string, txnId: string = crypto.randomUUID()): Promise<SendMessageResult> {
     const rooms = await this.getRooms();
     const matches = rooms.filter((r) => r.name.toLowerCase() === name.toLowerCase());
 
