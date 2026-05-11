@@ -14,8 +14,8 @@ import type {
   Member,
   Message,
   MessagesResult,
-  SendMessageResult,
   Room,
+  SendMessageResult,
   UserProfile,
 } from "./MessengerTypes.js";
 
@@ -139,13 +139,18 @@ export class MessengerService {
     return { messages, start: data.start, end: data.end };
   }
 
-  async sendMessage(roomId: string, body: string, txnId: string = crypto.randomUUID()): Promise<SendMessageResult> {
+  async sendMessage(
+    roomId: string,
+    body: string,
+    txnId: string = crypto.randomUUID(),
+  ): Promise<SendMessageResult> {
     const encodedRoomId = encodeURIComponent(roomId);
+    const encodedTxnId = encodeURIComponent(txnId);
 
     const res = await this.session.http.put(
-      `${this.session.matrixBaseUrl()}/rooms/${encodedRoomId}/send/m.room.message/${txnId}`,
+      `${this.session.matrixBaseUrl()}/rooms/${encodedRoomId}/send/m.room.message/${encodedTxnId}`,
       JSON.stringify({ msgtype: "m.text", body }),
-    { headers: { ...this.authHeader(), "Content-Type": "application/json" } },
+      { headers: { ...this.authHeader(), "Content-Type": "application/json" } },
     );
 
     const data = parseJson<{ event_id: string }>(res.data, "sendMessage");
@@ -154,13 +159,19 @@ export class MessengerService {
     return { eventId: data.event_id };
   }
 
-  async sendMessageByName(name: string, body: string, txnId: string = crypto.randomUUID()): Promise<SendMessageResult> {
+  async sendMessageByName(
+    name: string,
+    body: string,
+    txnId: string = crypto.randomUUID(),
+  ): Promise<SendMessageResult> {
     const rooms = await this.getRooms();
     const matches = rooms.filter((r) => r.name.toLowerCase() === name.toLowerCase());
 
     if (matches.length === 0) throw new Error(`No room found with name "${name}"`);
     if (matches.length > 1)
-      throw new Error(`Multiple rooms found with name "${name}" — use sendMessage() with a room ID`);
+      throw new Error(
+        `Multiple rooms found with name "${name}" — use sendMessage() with a room ID`,
+      );
 
     const roomId = matches[0]?.id;
     if (!roomId) throw new Error(`No room found with name "${name}"`);

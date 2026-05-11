@@ -341,7 +341,7 @@ describe("MessengerService.sendMessage()", () => {
   const ENCODED_ROOM = encodeURIComponent(ROOM_ID);
 
   test("posts to the correct Matrix endpoint and returns the event ID", async () => {
-    const { session, expectAllRoutesCalled } = buildMockSession([
+    const { session, calls, expectAllRoutesCalled } = buildMockSession([
       {
         method: "put",
         url: `${MATRIX_BASE}/rooms/${ENCODED_ROOM}/send/m.room.message/test-txn`,
@@ -353,6 +353,23 @@ describe("MessengerService.sendMessage()", () => {
     const result = await new MessengerService(session).sendMessage(ROOM_ID, "Hello!", "test-txn");
 
     expect(result.eventId).toBe("$abc123:server");
+    expect(calls[0]?.body).toBe(JSON.stringify({ msgtype: "m.text", body: "Hello!" }));
+    expectAllRoutesCalled();
+  });
+
+  test("encodes custom transaction IDs as URL path segments", async () => {
+    const txnId = "test/txn?with#chars";
+    const { session, expectAllRoutesCalled } = buildMockSession([
+      {
+        method: "put",
+        url: `${MATRIX_BASE}/rooms/${ENCODED_ROOM}/send/m.room.message/${encodeURIComponent(txnId)}`,
+        headers: { Authorization: `Bearer ${MATRIX_TOKEN}`, "Content-Type": "application/json" },
+        response: { data: JSON.stringify({ event_id: "$abc123:server" }) },
+      },
+    ]);
+
+    await new MessengerService(session).sendMessage(ROOM_ID, "Hello!", txnId);
+
     expectAllRoutesCalled();
   });
 });
@@ -377,7 +394,7 @@ describe("MessengerService.sendMessageByName()", () => {
   });
 
   test("looks up the room by name and sends the message", async () => {
-    const { session, expectAllRoutesCalled } = buildMockSession([
+    const { session, calls, expectAllRoutesCalled } = buildMockSession([
       {
         method: "get",
         url: `${MATRIX_BASE}/sync`,
@@ -396,6 +413,7 @@ describe("MessengerService.sendMessageByName()", () => {
     const result = await new MessengerService(session).sendMessageByName("Test Room", "Hello!", "test-txn");
 
     expect(result.eventId).toBe("$abc123:server");
+    expect(calls[1]?.body).toBe(JSON.stringify({ msgtype: "m.text", body: "Hello!" }));
     expectAllRoutesCalled();
   });
 
