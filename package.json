@@ -1,6 +1,6 @@
 {
   "name": "iserv-api",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "Unofficial TypeScript SDK for IServ school management servers",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -46,17 +46,17 @@
   "license": "MIT",
   "dependencies": {
     "cheerio": "^1.2.0",
-    "dayjs": "^1.11.21",
+    "dayjs": "^1.11.22",
     "got": "^15.1.0",
-    "nodemailer": "^9.0.3",
+    "nodemailer": "^9.0.5",
     "tough-cookie": "^6.0.2",
     "webdav": "^5.10.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.4",
+    "@biomejs/biome": "^2.5.8",
     "@types/nodemailer": "^8.0.1",
     "@types/tough-cookie": "^4.0.5",
-    "tsdown": "^0.22.11",
+    "tsdown": "^0.22.14",
     "typescript": "^6.0.3",
     "vitest": "^4.1.10"
   }

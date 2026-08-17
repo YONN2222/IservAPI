@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.5 - 2026-08-17
+
+### Changed
+
+- Updated Dependencies to their latest version
+
 ## 1.4.4 - 2026-07-19
 
 ### Changed
