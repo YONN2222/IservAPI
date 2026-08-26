@@ -32,6 +32,15 @@ export type {
 export type { DiskSpaceEntry, FolderSize, GetWebDavClientOptions } from "../Files/FilesTypes.js";
 
 export type {
+  ForumLastPost,
+  ForumListItem,
+  ForumPost,
+  Topic,
+  TopicListItem,
+  TopicListResult,
+} from "../Forum/ForumTypes.js";
+
+export type {
   IServDateTime,
   NavigationBadges,
   NotificationItem,
