@@ -46,18 +46,18 @@
   "license": "MIT",
   "dependencies": {
     "cheerio": "^1.2.0",
-    "dayjs": "^1.11.22",
+    "dayjs": "^1.11.23",
     "got": "^15.1.0",
     "nodemailer": "^9.0.5",
     "tough-cookie": "^6.0.2",
     "webdav": "^5.10.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "^2.5.8",
+    "@biomejs/biome": "^2.5.10",
     "@types/nodemailer": "^8.0.1",
     "@types/tough-cookie": "^4.0.5",
     "tsdown": "^0.22.14",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }
