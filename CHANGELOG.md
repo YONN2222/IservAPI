@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.5.0 - 2026-11-09
+
+### Added
+
+- `users.searchDirectory(query, limit?)` returns users from the recipient autocomplete as structured entries with name, email, short code and roles.
+- `parseAutocompleteExtra()` and the `DirectoryUser` type for reading the short code and roles out of IServ's autocomplete entries.
+- `ForumService` available as `api.forum` with `listForums()`, `listTopics()`, `getTopic()`, `markAllAsRead()` and `markForumAsRead()`.
+- README documentation for the forum and directory search functions.
+
+### Changed
+
+- Updated dependencies (dayjs, undici, vitest, Biome).
+
 ## 1.4.5 - 2026-08-17
 
 ### Changed

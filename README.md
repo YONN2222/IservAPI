@@ -40,6 +40,7 @@ await api.disconnect();
     - [Search users](#search-users)
     - [Search users autocomplete](#search-users-autocomplete)
     - [Search messenger recipients](#search-messenger-recipients)
+    - [Search directory](#search-directory)
   - [Email](#email)
     - [Get emails](#get-emails)
     - [Get message](#get-message)
@@ -75,6 +76,12 @@ await api.disconnect();
     - [Send message by name](#send-message-by-name)
     - [React to message by name](#react-to-message-by-name)
     - [Listen for messages](#listen-for-messages)
+  - [Forum](#forum)
+    - [List forums](#list-forums)
+    - [List topics](#list-topics)
+    - [Get topic](#get-topic)
+    - [Mark all as read](#mark-all-as-read)
+    - [Mark forum as read](#mark-forum-as-read)
   - [Conference](#conference)
     - [Get conference health](#get-conference-health)
 - [Logging](#logging)
@@ -191,6 +198,28 @@ const alice = recipients[0];
 ```
 
 Searches IServ's messenger recipient autocomplete endpoint. This is useful for messenger operations such as `createDirectMessage()`, where the returned `value` is the recipient identifier expected by IServ.
+
+#### Search directory
+
+```ts
+const people = await api.users.searchDirectory("herme");
+// [{ name: "Björn Hermes", email: "bjoern.hermes@school.example", shortCode: "HMS", roles: ["Lehrer"] }]
+```
+
+Searches the recipient autocomplete used by the mail composer and returns structured users instead of raw autocomplete entries. Only users are returned, groups and mailing lists are skipped. An optional second argument sets the request limit.
+
+`shortCode` is the teacher abbreviation IServ shows next to the role (for example `HMS`) and is `null` for accounts that have none. `roles` contains the remaining labels such as `Lehrer` or `Schüler`.
+
+IServ returns at most about ten users per request and only matches on names, so the short code itself cannot be searched. To resolve a short code to a name, look it up in your timetable software or build your own index from several name searches.
+
+The parser behind it is exported as well:
+
+```ts
+import { parseAutocompleteExtra } from "iserv-api";
+
+parseAutocompleteExtra("HMS, Lehrer"); // { shortCode: "HMS", roles: ["Lehrer"] }
+parseAutocompleteExtra("Schüler"); // { shortCode: null, roles: ["Schüler"] }
+```
 
 ---
 
@@ -603,6 +632,53 @@ Starts a real-time message listener using Matrix long-polling. The callback fire
 | `pollTimeout` | `number` | `30000` | Long-poll timeout in ms |
 | `roomIds` | `string[]` | / | Only emit events from these room IDs |
 | `onError` | `(err: Error) => void` | / | Called on sync errors instead of logging |
+
+---
+
+### Forum
+
+#### List forums
+
+```ts
+const forums = await api.forum.listForums();
+```
+
+Returns every forum you can see with its title, description, category, access groups, topic and post counts, unread count and the last post.
+
+#### List topics
+
+```ts
+const result = await api.forum.listTopics(42);
+const nextPage = await api.forum.listTopics(42, 2);
+```
+
+Returns the topics of a forum together with `page` and `totalPages`. Each topic includes its author, post count, unread count, last post and whether it has been read.
+
+#### Get topic
+
+```ts
+const topic = await api.forum.getTopic(42, 1234);
+console.log(topic.title, topic.pinned, topic.closed);
+for (const post of topic.posts) console.log(post.author, post.contentText);
+```
+
+Returns the topic with all posts. Every post carries the rendered `contentHtml` and a plain `contentText` version, plus its nesting `level`.
+
+#### Mark all as read
+
+```ts
+await api.forum.markAllAsRead();
+```
+
+Marks every forum as read.
+
+#### Mark forum as read
+
+```ts
+await api.forum.markForumAsRead(42);
+```
+
+Marks a single forum as read.
 
 ---
 
