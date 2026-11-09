@@ -64,3 +64,11 @@ export interface UserAutocompleteResult {
   certainty: number;
   fuzzy: boolean;
 }
+
+export interface DirectoryUser {
+  name: string;
+  email: string;
+  /** Short code such as "HMS" as shown by IServ's recipient autocomplete, if the account has one. */
+  shortCode: string | null;
+  roles: string[];
+}

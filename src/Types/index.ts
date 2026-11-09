@@ -49,6 +49,7 @@ export type {
 } from "../Notifications/NotificationTypes.js";
 
 export type {
+  DirectoryUser,
   SetUserInfoOptions,
   UserAutocompleteResult,
   UserInfo,

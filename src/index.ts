@@ -31,6 +31,7 @@ export type {
   CustomDateTimeAlarm,
   CustomIntervalAlarm,
   DeleteEventOptions,
+  DirectoryUser,
   GetEmailsOptions,
   GetWebDavClientOptions,
   IntervalType,
@@ -44,3 +45,4 @@ export type {
   UserPublicInfo,
   WeekDay,
 } from "./Types/index.js";
+export { parseAutocompleteExtra } from "./User/UserService.js";

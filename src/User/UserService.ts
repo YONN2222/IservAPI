@@ -6,6 +6,7 @@ import { parseJson } from "../Core/HttpClient.js";
 import type { IServSession } from "../Core/IServSession.js";
 import { createLogger } from "../Core/Logger.js";
 import type {
+  DirectoryUser,
   SetUserInfoOptions,
   UserAutocompleteResult,
   UserInfo,
@@ -15,6 +16,32 @@ import type {
 const log = createLogger("User");
 
 const USERNAME_PATTERN = /^[a-zA-Z0-9._-]+$/;
+
+const DEFAULT_DIRECTORY_LIMIT = 50;
+const SHORT_CODE_PATTERN = /^[A-ZÄÖÜ0-9]{2,6}$/;
+const FUZZY_MATCH_MARKER = "Ähnlicher Name";
+
+/** Splits IServ's autocomplete `extra` field ("HMS, Lehrer") into short code and roles. */
+export function parseAutocompleteExtra(extra: string): {
+  shortCode: string | null;
+  roles: string[];
+} {
+  const parts = extra
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part !== "" && part !== FUZZY_MATCH_MARKER);
+  const [first, ...rest] = parts;
+  if (first !== undefined && SHORT_CODE_PATTERN.test(first)) {
+    return { shortCode: first, roles: rest };
+  }
+  return { shortCode: null, roles: parts };
+}
+
+function toDirectoryUser(result: UserAutocompleteResult): DirectoryUser {
+  const match = /^(.*?)\s*<([^>]+)>$/.exec(result.text);
+  const { shortCode, roles } = parseAutocompleteExtra(result.extra);
+  return { name: match?.[1] || result.text, email: match?.[2] ?? "", shortCode, roles };
+}
 
 function readInput($: cheerio.CheerioAPI, id: string): string {
   return ($(`#${id}`).val() as string | undefined) ?? "";
@@ -213,6 +240,11 @@ export class UserService {
     );
     log.info("Searched users (autocomplete)");
     return parseJson<UserAutocompleteResult[]>(res.data, "user autocomplete");
+  }
+
+  async searchDirectory(query: string, limit = DEFAULT_DIRECTORY_LIMIT): Promise<DirectoryUser[]> {
+    const results = await this.searchAutocomplete(query, limit);
+    return results.filter((r) => r.source === "user").map(toDirectoryUser);
   }
 
   async searchMessengerRecipients(query: string, limit = 10): Promise<UserAutocompleteResult[]> {
