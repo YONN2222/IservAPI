@@ -48,7 +48,7 @@
     "cheerio": "^1.2.0",
     "dayjs": "^1.11.23",
     "got": "^15.1.0",
-    "nodemailer": "^9.0.5",
+    "nodemailer": "^10.1.4",
     "tough-cookie": "^6.0.2",
     "webdav": "^5.10.0"
   },
