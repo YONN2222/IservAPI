@@ -1,4 +1,5 @@
-export { IServApiError, IServAuthError } from "./Core/Errors.js";
+export type { ConnectOptions } from "./Auth/AuthService.js";
+export { IServApiError, IServAuthError, IServTwoFactorRequiredError } from "./Core/Errors.js";
 export { IServAPI } from "./Core/IServClient.js";
 export type { PatchMessageResult } from "./Email/EmailTypes.js";
 export { ForumService } from "./Forum/ForumService.js";

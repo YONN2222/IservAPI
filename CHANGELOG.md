@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.6.0 - 2026-11-12
+
+### Added
+
+- Two-factor authentication: `IServAPI.connect(url, user, password, { twoFactorCode, twoFactorSecret })`. `twoFactorCode` is a 6-digit code or a function returning one; `twoFactorSecret` is the authenticator's Base32 secret and generates the code automatically.
+- `IServTwoFactorRequiredError`, thrown when the account needs a second factor and none was given.
+- `ConnectOptions` type.
+
 ## 1.5.0 - 2026-11-09
 
 ### Added

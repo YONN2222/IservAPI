@@ -5,6 +5,15 @@ export class IServAuthError extends Error {
   }
 }
 
+export class IServTwoFactorRequiredError extends IServAuthError {
+  constructor() {
+    super(
+      "Login failed! Two-factor authentication is required: pass twoFactorCode or twoFactorSecret.",
+    );
+    this.name = "IServTwoFactorRequiredError";
+  }
+}
+
 export class IServApiError extends Error {
   constructor(
     message: string,

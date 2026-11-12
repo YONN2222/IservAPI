@@ -21,10 +21,26 @@ console.log(info);
 await api.disconnect();
 ```
 
+### Two-factor authentication
+
+Accounts with 2FA need a code from the authenticator app. Pass it once, or pass the app's Base32 secret so the code is generated for every (re-)login:
+
+```ts
+// Current 6-digit code (or a function that returns it, e.g. a prompt)
+await IServAPI.connect(host, user, password, { twoFactorCode: "123456" });
+await IServAPI.connect(host, user, password, { twoFactorCode: () => askUser() });
+
+// Secret from the authenticator setup: works unattended
+await IServAPI.connect(host, user, password, { twoFactorSecret: "JBSWY3DPEHPK3PXP" });
+```
+
+Without a code, `connect` throws `IServTwoFactorRequiredError` (a subclass of `IServAuthError`); a wrong code throws `IServAuthError`.
+
 ## Table of contents
 
 - [Installation](#installation)
 - [Basic usage](#basic-usage)
+- [Two-factor authentication](#two-factor-authentication)
 - [Supported functionality](#supported-functionality)
   - [Own account](#own-account)
     - [Get own user info](#get-own-user-info)

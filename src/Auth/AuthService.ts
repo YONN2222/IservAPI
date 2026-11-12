@@ -1,7 +1,8 @@
-import { IServAuthError } from "../Core/Errors.js";
+import { IServAuthError, IServTwoFactorRequiredError } from "../Core/Errors.js";
 import { parseJson } from "../Core/HttpClient.js";
 import type { IServSession } from "../Core/IServSession.js";
 import { createLogger } from "../Core/Logger.js";
+import { generateTotp } from "./totp.js";
 
 const log = createLogger("Auth");
 
@@ -16,6 +17,22 @@ function isLoginUrl(url: string): boolean {
 
 function isAppAuthUrl(url: string): boolean {
   return new URL(url).pathname === "/iserv/auth/auth";
+}
+
+export type ConnectOptions = {
+  /** Current 6-digit code from the authenticator app, or a function that returns it (e.g. prompts the user). */
+  twoFactorCode?: string | (() => string | Promise<string>);
+  /** Base32 secret of the authenticator app; the code is generated automatically, which also works for re-logins. */
+  twoFactorSecret?: string;
+};
+
+const TWO_FACTOR_FIELD = "two_factor_login_form";
+
+function isTwoFactorPage(res: { url: string; data: string }): boolean {
+  return (
+    new URL(res.url).pathname === "/iserv/auth/twofactor/confirm" ||
+    res.data.includes(`name="${TWO_FACTOR_FIELD}[`)
+  );
 }
 
 function resolveHtmlRedirect(html: string, baseUrl: string): string | null {
@@ -79,7 +96,41 @@ function parseLoginForm(html: string): URLSearchParams {
 }
 
 export class AuthService {
-  constructor(private readonly session: IServSession) {}
+  constructor(
+    private readonly session: IServSession,
+    private readonly options: ConnectOptions = {},
+  ) {}
+
+  private async resolveTwoFactorCode(): Promise<string> {
+    const { twoFactorCode, twoFactorSecret } = this.options;
+    const raw =
+      typeof twoFactorCode === "function"
+        ? await twoFactorCode()
+        : (twoFactorCode ?? (twoFactorSecret ? generateTotp(twoFactorSecret) : undefined));
+    if (raw === undefined) throw new IServTwoFactorRequiredError();
+    const code = raw.replace(/\s/g, "");
+    if (!/^\d{6}$/.test(code))
+      throw new IServAuthError("Login failed! The two-factor code must have 6 digits.");
+    return code;
+  }
+
+  private async submitTwoFactor(page: TextHttpResponse): Promise<TextHttpResponse> {
+    const code = await this.resolveTwoFactorCode();
+    const params = parseLoginForm(page.data);
+    [...code].forEach((digit, index) => {
+      params.set(`${TWO_FACTOR_FIELD}[two_factor_code_digit_${index + 1}]`, digit);
+    });
+    params.set("otp", code);
+
+    const res = await this.fetchText(page.url, {
+      method: "POST",
+      body: params.toString(),
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    });
+    const next = await this.followHtmlRedirects(res);
+    if (isTwoFactorPage(next)) throw new IServAuthError("Login failed! Wrong two-factor code.");
+    return next;
+  }
 
   private async fetchText(
     url: string,
@@ -174,13 +225,14 @@ export class AuthService {
         body: loginParams.toString(),
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
       });
-      const postLoginRes = await this.followHtmlRedirects(loginRes);
+      let postLoginRes = await this.followHtmlRedirects(loginRes);
 
       const body = postLoginRes.data as string;
       if (body.includes("Account existiert nicht!"))
         throw new IServAuthError("Account does not exist!");
       if (body.includes("Anmeldung fehlgeschlagen!"))
         throw new IServAuthError("Login failed! Wrong password.");
+      if (isTwoFactorPage(postLoginRes)) postLoginRes = await this.submitTwoFactor(postLoginRes);
 
       await this.establishAppSession();
 

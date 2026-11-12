@@ -1,4 +1,4 @@
-import { AuthService } from "../Auth/AuthService.js";
+import { AuthService, type ConnectOptions } from "../Auth/AuthService.js";
 import { CalendarService } from "../Calendar/CalendarService.js";
 import { ConferenceService } from "../Conference/ConferenceService.js";
 import { EmailService } from "../Email/EmailService.js";
@@ -21,8 +21,8 @@ export class IServAPI {
 
   private readonly auth: AuthService;
 
-  private constructor(session: IServSession) {
-    this.auth = new AuthService(session);
+  private constructor(session: IServSession, options: ConnectOptions) {
+    this.auth = new AuthService(session, options);
     this.calendar = new CalendarService(session);
     this.email = new EmailService(session);
     this.users = new UserService(session);
@@ -33,9 +33,14 @@ export class IServAPI {
     this.forum = new ForumService(session);
   }
 
-  static async connect(url: string, username: string, password: string): Promise<IServAPI> {
+  static async connect(
+    url: string,
+    username: string,
+    password: string,
+    options: ConnectOptions = {},
+  ): Promise<IServAPI> {
     const session = new IServSession(url, username, password);
-    const client = new IServAPI(session);
+    const client = new IServAPI(session, options);
     await client.auth.login();
     return client;
   }
